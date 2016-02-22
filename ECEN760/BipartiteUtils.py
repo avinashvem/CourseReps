@@ -37,7 +37,6 @@ class BitNode:
 		"""Constructor. Takes a node ID"""
 		self.ID=name
 		self.neighbors=[]
-		self.chan = int(-1)
 		self.degree= 0
 
 	def addNeighbors(self, nbs):
@@ -45,22 +44,25 @@ class BitNode:
 		for i in range(0, len(nbs)):
 			if(not nbs[i] in self.neighbors):
 				self.neighbors.append(nbs[i])
+				self.degree+=1
 
 	def replaceNeighbors(self, nbs):
 		"""Replaces the current list of neighbors. Takes a list of node IDs"""
 		self.neighbors=nbs
+		self.degree=len(nbs)
 
 	def removeNeighbor(self, nb):
 		"""Removes the specified node ID from the list of neighbors, if it exists"""
 		if(nb in self.neighbors):
 			self.neighbors.remove(nb)
+		self.degree=len(self.neighbors)
 
 	def getID(self):
 		"""Returns node ID"""
 		return self.ID
 
 	def getNeighbors(self):
-		"""Returns list of neighbors"""
+		"""Returns list of neighbor IDs"""
 		return self.neighbors
 
 
@@ -71,6 +73,7 @@ class ChkNode:
 		"""Constructor. Takes a node ID"""
 		self.ID=name
 		self.neighbors=[]
+		self.chan = int(-1)
 		self.degree= 0
 		
 
@@ -79,22 +82,26 @@ class ChkNode:
 		for i in range(0, len(nbs)):
 			if(not nbs[i] in self.neighbors):
 				self.neighbors.append(nbs[i])
+				self.degree+=1
 
 	def replaceNeighbors(self, nbs):
 		"""Replaces the current list of neighbors. Takes a list of node IDs"""
 		self.neighbors=nbs
+		self.degree=len(nbs)
 
 	def removeNeighbor(self, nb):
 		"""Removes the specified node ID from the list of neighbors, if it exists"""
 		if(nb in self.neighbors):
 			self.neighbors.remove(nb)
+		self.degree=len(self.neighbors)
+			
 
 	def getID(self):
 		"""Returns node ID"""
 		return self.ID
 
 	def getNeighbors(self):
-		"""Returns list of neighbors"""
+		"""Returns list of neighbor IDs"""
 		return self.neighbors
 
 
@@ -114,14 +121,14 @@ class BipartGraph:
 			self.addEdge(eds[i])
 
 	def containsBitNode(self, name):
-		"""Returns true if bit node is in graph, false otherwise"""
+		"""Returns true if bit node is in graph, false otherwise. Takes node ID as argument."""
 		for i in range(0, len(self.nodes)):
 			if(self.nodes[i].getID()==name):
 				return True
 		return False
 
 	def containsCheckNode(self, name):
-		"""Returns true if check node is in graph, false otherwise"""
+		"""Returns true if check node is in graph, false otherwise.Takes node ID as argument."""
 		for i in range(0, len(self.nodes)):
 			if(self.nodes[i].getID()==name):
 				return True
@@ -184,7 +191,7 @@ class BipartGraph:
 		self.ChkNodes.append(n)
 
 	def addEdge(self, edgep):
-		"""Adds an edge into the graph, and updates neighbors of relevant nodes.
+		"""Adds an edge into the graph, and updates neighbors & degrees of relevant nodes.
 		Takes an edge primitive, a list of two node IDs
 		"""
 		if(not self.containsEdge(edgep)):
@@ -210,7 +217,7 @@ class BipartGraph:
 		no2.removeNeighbor(edgep[0])
 
 	def removeBitNode(self, name):
-		"""Removes a node from the graph, and removes all edges connected to that node.
+		"""Removes a Bit node from the graph, and removes all edges connected to that node.
 		Takes a node ID
 		"""
 		no = self.getBitNode(name)
@@ -228,7 +235,7 @@ class BipartGraph:
 		nbs = no.getNeighbors()
 		while(len(nbs)>0):
 			self.removeEdge([nbs[0],name])
-			nbs=no.getNeighbors()
+			nbs=no.getNeighbors()			
 		self.ChkNodes.remove(no)
 
 	def updateNeighbors(self):
@@ -281,3 +288,75 @@ class BipartGraph:
 			fullstring += str(currentNodes[0])+" ---- "+str(currentNodes[1])+"\n"
 
 		return fullstring
+
+
+class Peeling:
+	"""peeling decoder on a Bipartite graph class.
+	"""
+	def __init__(self, G,chan):
+		"""Constructor. Takes a graph and channel output vector as arguments"""
+		self.graph=G
+		for i in range(0,len(self.graph.ChkNodes)):
+		    self.graph.ChkNodes[i].chan=chan[i]
+		self.deg1Chks=[]
+		
+	def peelBit(self,BitID):
+		"""Removes a Bit Node and all its edges from the graph. Takes the bit Node ID as argument"""
+		self.graph.removeBitNode(BitID)	
+		
+	def peelChk(self,chkID):
+		"""Removes a Chk Node and all its edges from the graph. Takes the Chk Node ID as argument"""
+		self.graph.removeChkNode(chkID)
+
+	def zeroStep(self):
+		"""Removes the first degree 1 Chk Node and all its edges from the graph. If none is found exits the programme."""
+		self.deg1Chks_constr()
+		if len(self.deg1Chks)>0:
+			i = self.deg1Chks[0]
+		else: 
+			print "There are no Degree 1 Check Nodes. Exiting"
+			return	
+
+		inbs=i.neighbors
+		no=self.graph.getBitNode(inbs[0])
+		
+		if len(inbs)>1:
+			print "There is an error. Degree 1 node has more than 1 connection\n"
+		elif len(inbs)==0:
+			self.graph.ChkNodes.remove(i)		
+		else:
+			self.peelBit(no.getID())
+			
+		self.deg1Chks_constr()
+	    
+	def peelIter(self):
+		
+		if len(self.deg1Chks)>0:
+			i = self.deg1Chks[0]
+		else: 
+			print "There are no Degree 1 Check Nodes. Exiting"
+			return	
+		nbs=i.neighbors
+		
+		if len(nbs)>1:
+			print "There is an error. Degree 1 node has more than 1 connection\n"
+			exit
+		iDeg=i.degree
+		
+		if iDeg!=0:
+			no=self.graph.getBitNode(nbs[0])
+			self.peelChk(i.getID())
+#			print "Removing Bit node",no.getID(), "and its %d neighbors" % len(no.neighbors)
+			self.peelBit(no.getID())
+		
+		self.deg1Chks_constr()          
+		
+	def deg1Chks_constr(self):
+		self.deg1Chks=[]
+		for j in self.graph.ChkNodes:
+			if j.degree==0:
+				self.graph.ChkNodes.remove(j)
+			elif j.degree==1:
+				self.deg1Chks.append(j)
+				
+	
