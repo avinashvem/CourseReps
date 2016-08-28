@@ -1,0 +1,355 @@
+\documentclass[12pt]{article}
+
+\usepackage{fullpage}
+
+\usepackage[table]{xcolor}
+\usepackage{transparent}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hhline}
+
+\usepackage{cite}
+
+\usepackage{float}
+
+%\usepackage[cmex10]{amsmath}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathabx}
+\usepackage{IEEEtrantools}
+
+%\usepackage{algorithmic}
+
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest} 
+\pgfplotsset{plot coordinates/math parser=false}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % load a font with all the characters
+
+
+\usepackage{bibentry}
+
+%\usepackage{flushend}
+
+\usetikzlibrary{decorations.markings,positioning,calc}
+
+\title{ECEN 604 - Channel Coding for Communication}
+
+\author{Avinash Vem\\
+ ECE,Texas A\&M University.}
+
+
+
+\newtheorem{thm}{Theorem}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{proof*}[thm]{Proof}
+
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{exmp}[thm]{Example}
+
+\newcommand{\vecnot}[1]{\underline{#1}}
+\input{Avinash.def}
+\begin{document}
+\maketitle
+
+\begin{center}
+{\Large Number Theory and Algebra: Essentials}
+\end{center}
+
+
+\section{Motivation}
+Until this point we have dealt with \textit{binary codes}. That simplified our job in many ways. For example knowing the error locations in the received vectors is sufficient to decode the transmitted code word. However there are many important non binary codes in which case we need to know both the error locations and the value of the error in those locations for a successful decoding. But we don't have theory to construct and analyze non-binary codes. In the cyclic codes section we have seen that the generator polynomial $g(x)$ should divide the polynomial $x^n -1$. For large block lengths i.e. for large values of $n$ we need efficient tools for factorizing $x^n -1$. We have also seen that the cyclic structure of codes reduce the amount of storage required for performing syndrome decoding. Maybe by exploiting additional algebraic structures we can develop better codes with efficient decoding.\\
+
+So in the subsequent lectures we are going to develop the required mathematical tools to address these issues. Most of this material is contained in \cite{Moon-ECCMAA05}.
+
+\section{Preliminaries of Number Theory}
+\begin{defn}
+An integer $b$ is \textbf{divisible} by a nonzero integer $a$ if there exists an integer $c$ such that $b=ac$. We denote this as $a|b$ and read it as $a$ divides $b$.  We denote this as $a|b$ and read it as $a$ divides $b$. Similarly for polynomials $a(x), b(x)\in F[x]$, where $F$ is a field, we say $b(x)$ is \textbf{divisible} by $a(x)$ if there exists $c(x)\in F[x]$ such that $b(x)=a(x)c(x)$. Similarly we denote $a(x) | b(x)$.
+\end{defn}
+
+\begin{thm}[Division Algorithm]
+For any integers $a$ and $b$ with $a>0$, $\exists$ unique integers $q$ and $r$ such that 
+\begin{align*}
+b=q+ar,
+\end{align*} 
+where $0\leq r < a$.
+For polynomials, for $a(x)$ and $b(x)$ in $F[x]$, $F$ a field, there is a unique representation 
+\begin{align*}
+b(x)=q(x)a(x)+r(x),
+\end{align*} 
+where deg$(r(x))<$ deg$(a(x))$.
+\end{thm}
+
+\begin{defn}
+The \textbf{greatest common divisor} (g.c.d) of two integers $a,b\in \Zp$ is the largest $k\in\Zp$ such that $k|a$ and $k|b$. The same definition applies for polynomials 
+\end{defn}
+
+\subsection{Euclidean Algorithm}
+Given $a_{1},a_{2}\in \Zp$ and $a_1 > a_2$ W.L.O.G. compute the sequence of integers $a_i$ until $a_{m}=0$ where the sequence is given by
+\begin{align*}
+a_{n+2}=\tx{R}_{a_{n+1}}[a_{n}].
+\end{align*}
+Note that $\tx{R}_{a_{n+1}}[a_{n}]$ is the remainder when $a_{n}$ is divided by $a_{n+1}$. Then the g.c.d of $a_{1},a_{2}$, denoted as $(a_1,a_2)$, is given by $a_{m-1}.$
+
+\begin{thm}
+If $g=(a,b)$ then $\exists$ integers $s$ and $t$ such that $g=(a,b)=as+bt.$ Similarly if  $g(x)=(a(x),b(x))$ then $\exists$ polynomials $s(x)$ and $t(x)$ such that $g(x)=a(x)s(x)+b(x)t(x)$.
+\end{thm}
+
+\section{Fields}
+The basic difference between a field and a ring is that a field should have a multiplicative identity and a multiplicative inverse for each element where as in a ring that's not necessary. For being complete, we define it here. \\
+\begin{defn}[Field]
+A field $F$ is a set of elements with two binary operations $+$ and $\times$ where
+\begin{itemize}
+\item $(F,+)$ forms an Abelian group.
+\item $(F\backslash \{0\},\times)$ forms a \textbf{commutative} group under multiplication.
+\item The operations $+$ and $\times$ distribute.
+\end{itemize}
+\end{defn}
+
+\begin{defn}
+In a ring $R$ if $a,b\in R$ and $a,b\neq 0$ but $ab=0$ then $a$ and $b$ are said to be zero divisors.
+\end{defn}
+
+\begin{thm}
+\label{Zp:Prime Field}
+The ring $(\Z_p,+,\times)$ is a field if and only if $p$ is a prime.
+\end{thm}
+
+\begin{lem}
+In a ring $\Z_n$, the zero divisors are precisely those elements that are not relatively prime to $n$.
+\end{lem}
+\begin{proof} Let $a\neq 0\in\Z_{n}$ is not relatively prime to $n$. We will show that $a$ is a zero divisor. Let $d\neq 1$ be the g.c.d of $n$ and $a$: $d=(n,a)$. Therefore $a(n/d)=(a/d)n$ is equal to zero in $\Z_n$. Thus we have an element $b:=n/d \in \Z_n$ where $ab=0$ in $\Z_{n}$ thus proving $a$ is a zero divisor in $\Z_n$.  \\
+
+Now suppose that let $c$ is relatively prime to $n$ and it's a zero divisor in $\Z_n\implies cd=kn$ for some $d\in\Z_n$ and $k\in\Z$. This implies $n$ divides $cd$ but there is no common factor between $n$ and $c$ therefore n divides $d$. This results in $d\equiv 0$ in $\Z_n$, a contradiction. 
+\end{proof}
+\begin{proof}[Proof of Theorem \ref{Zp:Prime Field}]
+We have already shown that if $p$ is not a prime then there exists zero divisors and hence $\Z_p$ is not a field. Now we will show that $\Z_{p}$ is indeed a field for $p$ prime.\\
+
+We have already seen that $(\Z_p,+)$ is a Abelian group. As for $(\Z_p\backslash \{0\},\times)$, it is closed, commutative and $1$ is the multiplicative identity. For the multiplicative inverse of $a\in\Z_p$, consider the set 
+\begin{align*}
+\Z_p.a=\{1.a,2.a,\ldots,(p-1).a\}
+\end{align*}
+with $p-1$ elements. All of the elements in the set are distinct because supposing not, $m.a\equiv n.a \mod p$ implying $(m-n).a\equiv 0 \mod p$ and hence $a$ is a zero divisor. Clearly this is a contradiction and hence the set $\Z_p.a$ has $p-1$ distinct elements belonging to the set $\Z_p\backslash \{0\}$ which has exactly $p-1$ elements. Thus for some $m\in\{1,2,\ldots p-1\}$, $m.a\equiv 1 \mod p$. Hence $(\Z_p,\times)$ is an Abelian group and $(\Z_p,+,\times)$ is a field.
+\end{proof}
+
+\subsection{Finite Fields or Galois Fields}
+A field with a finite number of elements is referred to as Galois field in the memory of the great mathematician \`{E}veriste Galois (1811-1832).\\
+We recall that the characteristic is the smallest positive integer  $k$ such that $k(1)=1+1+\ldots +1=0$.
+\begin{lem}
+The characteristic of a field must be either $0$ or a finite number.
+\end{lem}
+On the basis of this lemma, for any finite field GF$(q)$ of characteristic $p$ we can find a set of $p$ elements $\{0,1,2=2(1),3=3(1),\ldots..p-1\}$ which behave as a field. Thus $\Z_p$ for some prime number $p$ is a sub-field of every Galois field.
+
+\begin{thm}
+The order $q$ of a every finite field GF($q)$ must be a power of a prime.
+\end{thm}
+
+\begin{thm}[Freshman Exponentiation]
+If $x$ and $y$ are elements in a field of characteristic $p$,
+\begin{align*}
+(x+y)^p=x^p+y^p.
+\end{align*}
+\end{thm}
+
+Let us consider multiplicative questions related to a finite field.
+\begin{defn}
+The order of $\beta\in \tx{GF}(q)$, denoted as ord($\beta)$ is the smallest positive integer $n$ such that $\beta^n =1$. 
+\end{defn}
+
+\begin{defn}
+An element with order $q-1$ in GF$(q)$ is called a \textbf{primitive element}.
+\end{defn}
+The primitive element in a finite field plays an important role since it enables us to have a exponential representation for each element in the field and thus making the multiplication operation easy. So it's important for us to consider the questions: 1) Does a Galois field always have a primitive element? 2) How many primitive elements does a Galois field have? Over the next few lemmas we intend to arrive at the result in Theorem. \ref{Thm:NumPrimitiveElements} which tells us how many primitive elements are in a Galois field.
+\begin{lem}
+\label{Lem:OrderDividesq-1}
+If $\beta\in$GF$(q)$ and $\beta\neq 0$ then ord$(\beta)|(q-1).$
+\end{lem}
+Hint: Consider the subset $\{\beta,\beta^2,\ldots,\beta^{\tx{ord}(\beta)}=1\}$.
+
+\begin{lem}
+Let $\beta\in$GF$(q)$. $\beta^s=1\iff$ ord$(\beta)|s$.
+\end{lem}
+Hint: $\impliedby$ is trivial. For $\implies$ suppose that ord$(\beta)\notdivides s$ then $s=\tx{ord}(\beta)m+r$, $0< r<\tx{ord}(\beta)$. Then $\beta^s=\beta^r=1$ where $r<\tx{ord}(\beta)$ from the division algorithm which contradicts the minimality of ord$(\beta)$.
+
+%\begin{lem}
+%If $\alpha$ has order $s$ and $\beta$ has order $t$ and $(s,t)=1$ then $\alpha\beta$ has order $st$.
+%\end{lem}
+
+\begin{lem}
+\label{Lem:OrderRelation}
+In a finite field, if ord$(\alpha)=t$ and $\beta=\alpha^i$, then 
+\begin{align*}
+\tx{ord}(\beta)=\frac{t}{(i,t)}.
+\end{align*}
+\end{lem}
+
+\begin{defn}
+The \textbf{Euler totient} function $\phi(n)$ is the number of positive integers less than $n$ that are relatively prime to $n$. This is called Euler $\phi$ function.
+\begin{align*}
+\phi(n)=n\prod_{p|n} (1-\frac{1}{p})
+\end{align*}
+\end{defn}
+
+
+\begin{lem}
+For a Galois field GF($q$), if $t|(q-1)$ then there are $\phi(t)$ elements of order $t$ in GF($q$) where $\phi(t)$ is the Euler totient function. 
+\end{lem}
+\begin{proof}
+Let $\alpha$ be an element of order $t$. Then for any $i$ such that $(i,t)=1$, $\beta=\alpha^{i}$ has the same order $t$ from Lemma. \ref{Lem:OrderRelation}. From the definition of Euler Totient function there are exactly $\phi(t)$ such elements. To show that elements that are not of the form $\alpha^i$ but are of order $t$ does not exist, consider the set of elements $\{\alpha,\alpha^2,\ldots \alpha^t\}$ as solutions to the polynomial.  Then show that all these elements are distinct and then use the fact that polynomials of degree $t$ over a field has no more than $t$ roots.
+\end{proof}
+Note that there are no elements of order $t$ when $t\notdivides (q-1)$ since for any valid order $t$, it should divide $(q-1)$[see Lemma \ref{Lem:OrderDividesq-1}].
+
+
+
+\begin{theorem}
+\label{Thm:NumPrimitiveElements}
+There are $\phi(q-1)$ primitive elements in GF($q$).
+\end{theorem}
+
+\begin{exmp}
+For example consider GF$(7)$. One can verify that only the elements $3$ and $5$ in GF$(7)$ are of order $6$. From the above theorem there are $\phi(7-1)=2$ primitive elements. 
+\end{exmp}
+
+Because primitive elements exist, the non zero elements of a field GF($q$) can always be written as powers of a primitive element. Let $\alpha$ is a primitive element in GF($q$) and let $\beta=\alpha^i $ be another primitive element i.e., ($i,q-1)=1$. Despite the fact that there are two different representations for GF($q$) i.e, $\{0,1,\alpha,\alpha^2,\ldots,\alpha^{q-2}\}$ and  $\{0,1,\beta,\beta^2,\ldots,\beta^{q-2}\}$ these two are not two different fields. Therefore $\langle \alpha \rangle$ is isomorphic to $\langle \beta \rangle$. We can thus talk of \textbf{the} Galois field with $q$ elements.
+
+\begin{thm}
+\label{Thm:GFqEquation}
+Every element of the field GF($q$) satisfies the equation $x^q-x=0$. Furthermore they constitute the entire set of the roots for this degree $q$ equation.
+\end{thm}
+
+\begin{cor}
+\label{Thm:GFqEquationCorollary}
+Every element in the field GF($q$) satisfies the equation 
+\begin{align*}
+x^{q^{n}}-x=0 
+\end{align*}
+for every $n\geq 0$.
+\end{cor}
+
+
+
+\section{Irreducible and Primitive polynomials}
+\begin{defn}
+A polynomial $g(x)\in\GFq [x]$ is said to be \textbf{irreducible} over $\GFq[x]$ if it cannot be factored into polynomials of lower degree in the same field.
+\end{defn}
+\begin{exmp}
+$f(x)=x^2+x+1$ is irreducible over $\GF{2}[x]$ but $f(x)=x^2+x+1=(x+2)^2$  is not irreducible (or factorizable) over $\GF{3}[x]$.
+\end{exmp}
+
+As we have seen in the example in the class, any irreducible polynomial can be used to construct an extension field but the computation in the field is easier if a primitive polynomial is used whose definition and properties we will see shortly.
+
+\begin{thm}
+Let $p$ be prime. An irreducible $m$th-degree polynomial $f(x)\in\GF{p}[x]$ divides $x^{p^m-1}-1$.
+\end{thm}
+\begin{proof}
+Let $\GFq[x]=\GF{p^m}$ be constructed using the irreducible polynomial $f(x)$ where $\alpha$ denotes the root of the polynomial $f(x):f(\alpha)=0.$ By Theorem \ref{Thm:GFqEquation} $\alpha^{p^m-1}=1$ which implies
+\begin{align*}
+x^{p^m-1}-1=p(x)q(x)+r(x)
+\end{align*}
+where deg($r(x)$)<deg($p(x)$). Substituting $\alpha$ gives $r(\alpha)=0$. But as we have seen in the example that the elements in the field are represented as polynomials in $\alpha$ of degree $\leq m-1$.   Thus $r(x)$ is the zero polynomial.
+\end{proof}
+In the above proof by using the result in Corollary \ref{Thm:GFqEquationCorollary} that $\alpha^{q^n}-1=\alpha$ rather than $\alpha^q=1$ for all $\alpha\in \GFq$ we obtain the following result.
+
+\begin{thm}
+If $f(x)\in\GFq[x]$ is an irreducible polynomial of degree $m$, then 
+\begin{align*}
+f(x)\divides (x^{q^k}-x)
+\end{align*}
+for any $k$ such that $m\divides k$.
+\end{thm}
+
+\begin{defn}
+\label{Defn:PrimitivePolynomial}
+An irreducible polynomial $p(x)\in\GF{p}[x]$ of degree $m$ is said to be a \textbf{primitive polynomial} if the smallest integer $n$ for which $p(x)$ divides $x^n-1$ is $n=p^m-1.$
+\end{defn}
+Let's assume we constructed $\GF{p^m}$ using the irreducible polynomial $p(x)$ and let $\alpha$ be the root of $p(x)$ in $\GF{p^m}$. We know $\alpha^{p^m-1}=1$. If the polynomial $p(x)$ is not primitive then there exists $n<p^m-1$ such that $p(x)|x^n-1$ which implies $\alpha^n=1$. This would mean the order of $\alpha$ is less than $p^m-1$ and hence $\alpha $  is not a primitive element. This is intuition behind the Definition \ref{Defn:PrimitivePolynomial} of primitive polynomial. In fact we have a stringer relation between primitive polynomials and primitive elements in a Galois Field.
+
+\begin{thm}
+The roots of an $m$th degree primitive polynomial $p(x)\in\GF{p}[x]$ are primitive elements in $\GF{p^m}$.
+\end{thm}
+We will skip the proof of this theorem since it requires a result from subsequent section.\\
+
+Lets' recollect that all the elements of the field can be \textbf{generated as powers of the roots of primitive polynomial.}
+
+\section{Conjugate Elements and Minimal Polynomials}
+Even when we are working over a higher field, say $\GF{q^m}$, it is desirable that we have the generator polynomial over the base field $\GFq$. In this section we see how do we obtain polynomials that have coefficients in base field but the roots in a larger field. This is analogous to the polynomial $x^2+1$ being from $\R[x]$ but the roots are in $\mathbb{C}$. As we know the roots $+i,-i$ are called conjugate elements.
+
+\begin{thm}
+Let $\GFq=\GF{p^r}$ for some $r\geq 1.$ Let $f(x)=\sum_{1}^{d}f_jx^j\in\GFq[x]$. That is $f_j\in\GFq$. Then
+\begin{align*}
+f(x^{q^n})=[f(x)]^{q^n}.
+\end{align*}
+for any $n\geq 0.$
+\end{thm}
+\begin{proof}
+\begin{align*}
+[f(x)]^{q^n}&=\left[\sum_{1}^{d}f_jx^j \right]^{q^n}\\
+&=\sum_{1}^{d}f_{j}^{q^n}(x^j)^{q^n}\\
+&=\sum_{1}^{d}f_j(x^{q^n})^j\\
+&=f(x^{q^n}).
+\end{align*}
+\end{proof}
+Thus if $\beta\in\GF{q^m}$ is a root of $f(x)\in\GF{q}[x]$ then $\beta^{q^n}$ is also a root of $f(x).$
+
+\begin{defn}
+Let $\beta\in\GF{q^m}$.The conjugates of $\beta$ with respect to a subfield $\GF{q}$ are $\beta,\beta^q,\beta^{q^2},\ldots,$. The conjugates of $\beta$ with respect to $\GFq$ form a set called the \textbf{conjugacy class} of $\beta$ with respect to $\GFq$.
+\end{defn}
+
+\begin{defn}
+Let $\beta\in\GF{q^m}$. The \textbf{minimal polynomial} of $\beta$ with respect to $\GFq$ is the smallest degree, non-zero, monic polynomial $p(x)\in\GFq[x]$ such that $p(\beta)=0$.
+\end{defn}
+
+\vspace{0.1cm}
+\begin{thm}
+\label{Thm:MinimalPolyConjugacy}
+Let $\beta\in\GF{q^m}$ have order $n$ and let $\{\beta,\beta^q,\beta^{q^2},\ldots,\beta^{q^d}\}$ be the conjugacy class of $\beta$ with respect to $\GFq$. Then the coefficients of the polynomial $p(x)=\prod_{i=1}^{d}(x-\beta^{q^i})$ are in $\GFq$. Furthermore $p(x)$ is irreducible. That is, $p(x)$ is \textbf{minimal polynomial} for $\beta$.
+\end{thm}
+
+
+\section{Factoring $x^n-1$}
+We come to the question of critical importance to us: Factorization of $x^n-1$. We now have the necessary tools. Let's assume $n=q^m-1.$ Then all the $q^m-1$ elements in $\GF{q^m}\backslash\{0\}$ are roots of $x^n-1$. Therefore
+\begin{align*}
+x^n-1=\prod_{1}^{q^m-1}(x-\alpha^i)
+\end{align*}
+where $\alpha$ is a primitive element in $\GF{q^m}$. Now to obtain factors from $\GFq[x]$ rather than $\GF{q^m}[x]$ we group the linear factors above according to the conjugacy classes and we end up with factors from $\GFq[x]$ (see Theorem \ref{Thm:MinimalPolyConjugacy}).\\
+
+To the case when $n\neq q^m-1$. Then we find $q,m$ such that $n\divides (q^m-1)$. This guarantees the existence of an element $\beta$ of order $n$ in $\GF{q^m}$. If $\beta$ is a root of $x^n-1$ then so are the elements $1,\beta^2,\beta^3,\ldots,\beta^{n-1}$.
+ Thus 
+ \begin{align*}
+ x^n-1=\prod_{0}^{n-1}(x-\beta^i).
+ \end{align*}
+
+Now we group the factors according to their conjugacy classes and we obtain factors from $\GFq[x]$.
+
+%\begin{defn}
+%\end{defn}
+%
+%
+%\begin{exmp}
+%\end{exmp}
+%
+%\begin{exmp}
+%\end{exmp}
+%
+%\begin{defn}
+%\end{defn}
+
+%\begin{thm}
+%An element $\beta\in\GF{q^m}$ lies in $\GFq$ if and only if $\beta^q=\beta$.
+%\end{thm}
+%\begin{proof}
+%$\implies$ can be seen from Lemma. \ref{Lem:OrderDividesq-1}. The converse follows from Theorem. \ref{Thm:GFqEquation}.
+%\end{proof}
+
+\bibliographystyle{ieeetr}
+\bibliography{refer}
+
+
+\end{document}
